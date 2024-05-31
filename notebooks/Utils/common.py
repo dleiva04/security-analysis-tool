@@ -184,9 +184,7 @@ def getWorkspaceConfig():
 # COMMAND ----------
 
 # Read the best practices file. (security_best_practices.csv)
-# Sice User configs are present in this file, the file is renamed (to security_best_practices_user)
 # This is needed only on bootstrap, subsequetly the database is the master copy of the user configuration
-# Every time the values are altered, the _user file can be regenerated - but it is more as FYI
 def readBestPracticesConfigsFile():
   import pandas as pd
   from os.path import exists
@@ -198,11 +196,6 @@ def readBestPracticesConfigsFile():
 
   prefix = getConfigPath()
   origfile = f'{prefix}/security_best_practices.csv'
-  userfile = f'{prefix}/security_best_practices_user.csv' #delete this file to get latest 
-  file_exists = exists(userfile)
-    
-  if(file_exists): #bootstrap has already been done, the DB is the master, do not overwrite
-    return
     
   schema_list = ['id', 'check_id', 'category', 'check', 'evaluation_value', 'severity', 
                         'recommendation', 'aws', 'azure', 'gcp', 'enable', 'alert', 'logic', 'api', doc_url]
@@ -211,14 +204,39 @@ def readBestPracticesConfigsFile():
                recommendation string,aws int,azure int,gcp int,enable int,alert int, logic string, api string,  doc_url string'''
 
   security_best_practices_pd = pd.read_csv(origfile, header=0, usecols=schema_list).rename(columns = {doc_url:'doc_url'})
-  security_best_practices_pd.to_csv(userfile, encoding='utf-8', index=False)
-    
+  
   security_best_practices = (spark.createDataFrame(security_best_practices_pd, schema)
                             .select('id', 'check_id', 'category', 'check', 'evaluation_value', 
                                     'severity', 'recommendation', 'doc_url', 'aws', 'azure', 'gcp', 'enable', 'alert', 'logic', 'api'))
     
   security_best_practices.write.format('delta').mode('overwrite').saveAsTable(json_["analysis_schema_name"]+'.security_best_practices')
   display(security_best_practices)  
+
+# COMMAND ----------
+
+
+
+# Read and load the SAT and DASF mapping file. (SAT_DASF_mapping.csv)
+def load_sat_dasf_mapping():
+  import pandas as pd
+  from os.path import exists
+  import shutil
+
+  
+  prefix = getConfigPath()
+  origfile = f'{prefix}/sat_dasf_mapping.csv'
+    
+  schema_list = ['sat_id', 'dasf_control_id','dasf_control_name']
+
+  schema = '''sat_id int, dasf_control_id string,dasf_control_name string'''
+
+  sat_dasf_mapping_pd = pd.read_csv(origfile, header=0, usecols=schema_list)
+    
+  sat_dasf_mapping = (spark.createDataFrame(sat_dasf_mapping_pd, schema)
+                            .select('sat_id', 'dasf_control_id','dasf_control_name'))
+    
+  sat_dasf_mapping.write.format('delta').mode('overwrite').saveAsTable(json_["analysis_schema_name"]+'.sat_dasf_mapping')
+  display(sat_dasf_mapping) 
 
 # COMMAND ----------
 

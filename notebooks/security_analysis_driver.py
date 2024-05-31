@@ -54,6 +54,7 @@ loggr.info(out)
 # COMMAND ----------
 
 readBestPracticesConfigsFile()
+load_sat_dasf_mapping()
 
 # COMMAND ----------
 
