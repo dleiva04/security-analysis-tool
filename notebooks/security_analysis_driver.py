@@ -74,7 +74,7 @@ loggr.info(out)
 
 # COMMAND ----------
 
-readBestPracticesConfigsFile()
+#readBestPracticesConfigsFile()
 
 # COMMAND ----------
 
