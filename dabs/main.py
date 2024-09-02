@@ -1,10 +1,11 @@
 import json
 import os
 import subprocess
+import argparse
 
 from databricks.sdk import WorkspaceClient
-from sat.config import form, generate_secrets
-from sat.utils import cloud_type
+from sat.config import form, generate_secrets, get_env_vars
+from sat.utils import cloud_type, check_flags 
 
 
 def install(client: WorkspaceClient, answers: dict, profile: str):
@@ -36,10 +37,16 @@ def install(client: WorkspaceClient, answers: dict, profile: str):
     print("Installation complete.")
     print(f"Review workspace -> {client.config.host}")
 
+def setup(env_vars=False, db_profile=None):
+    
+    client, answers, profile = None, None, db_profile
 
-def setup():
     try:
-        client, answers, profile = form()
+        if env_vars:
+            get_env_vars(profile)
+        else:
+            client, answers, profile = form()
+
         install(client, answers, profile)
     except KeyboardInterrupt:
         print("Installation aborted.")
@@ -49,4 +56,12 @@ def setup():
 
 if __name__ == "__main__":
     os.system("clear")
-    setup()
+    db_profile, valid = check_flags()
+
+    if db_profile is None:
+        setup()
+    elif not valid:
+        print(f"Profile {db_profile} is not valid. Please check your profile.")
+        exit(1)
+    else:
+        setup(env_vars=valid, db_profile=db_profile)
